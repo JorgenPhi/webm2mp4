@@ -1,0 +1,22 @@
+{
+  "name": "webm2mp4",
+  "version": "1.0.0",
+  "description": " Telegram bot that converts webm files to mp4 for users with Apple devices",
+  "main": "bot.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JorgenPhi/webm2mp4.git"
+  },
+  "author": "JorgenPhi",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/JorgenPhi/webm2mp4/issues"
+  },
+  "homepage": "https://github.com/JorgenPhi/webm2mp4#readme",
+  "dependencies": {
+    "dotenv": "^4.0.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "node-telegram-bot-api": "^0.29.0",
+    "prettysize": "^1.1.0"
+  }
+}
