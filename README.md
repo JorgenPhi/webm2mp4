@@ -27,6 +27,12 @@ Usage
 ----------
 
 Simply upload a WebM into any chat where the bot is a participant and it will reply with a fresh MP4.
+![Usage](https://imgur.com/zrOMBgl.gif)
+
+Notes
+----------
+
+Converting videos is very CPU intensive. When using Heroku's free tier, it took 15 seconds to convert a small webm file. Your results will vary depending where you host this. I recommend hosting it locally.
 
 License
 -------
