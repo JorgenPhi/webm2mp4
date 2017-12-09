@@ -11,6 +11,20 @@ if (!process.env.TELEGRAMKEY || !process.env.MAXSIZEBYTES || isNaN(process.env.M
 	process.exit(1);
 }
 
+// Are we on Heroku? If so, let's make them happy.
+if (process.env.PORT && !isNaN(process.env.PORT)) {
+	const http = require('http');
+	const server = http.createServer((req, res) => {
+		res.end('Alive!')
+	});
+	server.listen(parseInt(process.env.PORT), (e) => {
+		if (e) {
+			return console.error(e)
+		}
+	});
+}
+
+
 function initListeners(username) {
 	// Telegram Required Commands
 
@@ -20,19 +34,18 @@ function initListeners(username) {
 	username = username.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 
 	// These commands are required to have responses by the Telegram API 
-	telegram.onText(RegExp('/start(?:@' + username + ')?$', 'i'), function (msg, match) {
+	telegram.onText(RegExp('/start(?:@' + username + ')?$', 'i'), function(msg, match) {
 		console.log('[webm2mp4] New private chat started with', msg.from);
 		telegram.sendMessage(msg.chat.id, 'Hello! Upload an WebM for me to convert it to a MP4.');
 	});
 
-	telegram.onText(RegExp('/help(?:@' + username + ')?$', 'i'), function (msg, match) {
+	telegram.onText(RegExp('/help(?:@' + username + ')?$', 'i'), function(msg, match) {
 		console.log('[webm2mp4] Help command used by', msg.from);
 		telegram.sendMessage(msg.chat.id, 'Hello! Upload an WebM for me to convert it to a MP4. I can also be added to group chats to automatically convert WebMs.');
 	});
 
 	// The real meat of the bot
 	telegram.on('document', (msg) => {
-		const chatId = msg.chat.id;
 		if (msg.document.mime_type == 'video/webm') {
 			// Check the file size
 			if (msg.document.file_size > process.env.MAXSIZEBYTES) {
@@ -42,7 +55,7 @@ function initListeners(username) {
 				return;
 			}
 			// Download it
-			telegram.downloadFile(msg.document.file_id, './tmp/').then(function (filename) {
+			telegram.downloadFile(msg.document.file_id, './tmp/').then(function(filename) {
 				ffmpeg(filename)
 					.output(filename + '.mp4')
 					.outputOptions('-strict -2') // Needed since axc is "experimental"
@@ -50,14 +63,14 @@ function initListeners(username) {
 						// Cleanup
 						fs.unlink(filename, (e) => {
 							if (e) {
-								console.error(e)
+								console.error(e);
 							}
 						});
 						console.log('[webm2mp4] File', msg.document.file_name, 'converted - Uploading...');
-						telegram.sendVideo(msg.chat.id, filename + '.mp4').then(function () {
+						telegram.sendVideo(msg.chat.id, filename + '.mp4').then(function() {
 							fs.unlink(filename + '.mp4', (e) => {
 								if (e) {
-									console.error(e)
+									console.error(e);
 								}
 							});
 							return;
@@ -68,12 +81,12 @@ function initListeners(username) {
 						// Cleanup
 						fs.unlink(filename, (err) => {
 							if (err) {
-								console.error(err)
+								console.error(err);
 							}
 						});
 						fs.unlink(filename + '.mp4', (err) => {
 							if (err) {
-								console.error(err)
+								console.error(err);
 							}
 						});
 						return;
@@ -93,7 +106,7 @@ if (!fs.existsSync('./tmp/')) {
 var telegram = new TelegramBot(process.env.TELEGRAMKEY, {
 	polling: true
 }); // Polling so we don't have to deal with NAT
-telegram.getMe().then(function (me) {
+telegram.getMe().then(function(me) {
 	console.log('[Telegram] Telegram connection established. Logged in as:', me.username);
 	initListeners(me.username);
 });
