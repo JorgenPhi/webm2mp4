@@ -1,0 +1,16 @@
+{
+  "name": "webm2mp4",
+  "description": "A telegram bot that converts WebM files to MP4.",
+  "repository": "https://github.com/JorgenPhi/webm2mp4",
+  "keywords": ["node", "ffmpeg", "webm", "mp4", "telegram"],
+  "buildpacks": [{"url": "https://github.com/heroku/heroku-buildpack-nodejs"}],
+  "env": {
+    "TELEGRAMKEY": {
+      "description": "The API key for your bot given to you from @BotFather."
+    },
+    "MAXSIZEBYTES": {
+      "description": "Filesize limit of a webm in bytes. Files larger than this will not be converted.",
+      "value": "10485760"
+    }
+  }
+}
