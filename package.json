@@ -7,6 +7,9 @@
     "type": "git",
     "url": "git+https://github.com/JorgenPhi/webm2mp4.git"
   },
+  "scripts": {
+    "start": "node bot.js"
+  },
   "author": "JorgenPhi",
   "license": "GPL-3.0",
   "bugs": {
