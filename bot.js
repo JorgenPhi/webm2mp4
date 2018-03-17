@@ -1,5 +1,8 @@
 'use strict';
 require('dotenv').config()
+const path = require('path');
+const url = require('url');
+const request = require('request');
 const TelegramBot = require('node-telegram-bot-api');
 const prettysize = require('prettysize');
 const fs = require('fs');
@@ -42,6 +45,62 @@ function initListeners(username) {
 	telegram.onText(RegExp('/help(?:@' + username + ')?$', 'i'), function(msg, match) {
 		console.log('[webm2mp4] Help command used by', msg.from);
 		telegram.sendMessage(msg.chat.id, 'Hello! Upload an WebM for me to convert it to a MP4. I can also be added to group chats to automatically convert WebMs.');
+	});
+
+	telegram.onText(new RegExp('(https?:\\/\\/[^\\s]+.webm)'), function (msg, match) {
+		var filename;
+        var r = request(match[0]).on('response', function(res) {
+            var contentDisp = res.headers['content-disposition'];
+            if (contentDisp && /^attachment/i.test(contentDisp)) {
+                filename = contentDisp.toLowerCase()
+                    .split('filename=')[1]
+                    .split(';')[0]
+                    .replace(/"/g, '');
+            } else {
+                filename = path.basename(url.parse(match[0]).path);
+            }
+            console.log(filename);
+            r.pipe(fs.createWriteStream(path.join(__dirname, filename)));
+        });
+
+        r.on('end', function () {
+            ffmpeg(filename)
+                .output(filename + '.mp4')
+                .outputOptions('-strict -2') // Needed since axc is "experimental"
+                .on('end', () => {
+                    // Cleanup
+                    fs.unlink(filename, (e) => {
+                        if (e) {
+                            console.error(e);
+                        }
+                    });
+                    console.log('[webm2mp4] File', filename, 'converted - Uploading...');
+                    telegram.sendVideo(msg.chat.id, filename + '.mp4').then(function() {
+                        fs.unlink(filename + '.mp4', (e) => {
+                            if (e) {
+                                console.error(e);
+                            }
+                        });
+                        return;
+                    });
+                })
+                .on('error', (e) => {
+                    console.error(e);
+                    // Cleanup
+                    fs.unlink(filename, (err) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                    });
+                    fs.unlink(filename + '.mp4', (err) => {
+                        if (err) {
+                            console.error(err);
+                        }
+                    });
+                    return;
+                })
+                .run();
+		});
 	});
 
 	// The real meat of the bot
