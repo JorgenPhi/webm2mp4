@@ -11,6 +11,10 @@
     "MAXSIZEBYTES": {
       "description": "Filesize limit of a webm in bytes. Files larger than this will not be converted.",
       "value": "10485760"
+    },
+    "APPURL": {
+      "description": "Application URL is needed for webhook. Otherwise will work in polling mode and sleep much.",
+      "value": "https://%insert_app_name%.herokuapp.com:443"
     }
   }
 }

@@ -1,5 +1,5 @@
 'use strict';
-require('dotenv').config()
+require('dotenv').config();
 const path = require('path');
 const url = require('url');
 const request = require('request');
@@ -12,19 +12,6 @@ const ffmpeg = require('fluent-ffmpeg');
 if (!process.env.TELEGRAMKEY || !process.env.MAXSIZEBYTES || isNaN(process.env.MAXSIZEBYTES)) {
 	console.error('Telegram API key was not, MaxSize was not set, or .env file is missing');
 	process.exit(1);
-}
-
-// Are we on Heroku? If so, let's make them happy.
-if (process.env.PORT && !isNaN(process.env.PORT)) {
-	const http = require('http');
-	const server = http.createServer((req, res) => {
-		res.end('Alive!')
-	});
-	server.listen(parseInt(process.env.PORT), (e) => {
-		if (e) {
-			return console.error(e)
-		}
-	});
 }
 
 
@@ -48,9 +35,9 @@ function initListeners(username) {
 	});
 
 	telegram.onText(new RegExp('(https?:\\/\\/[^\\s]+.webm)'), function (msg, match) {
-		var filename;
-        var r = request(match[0]).on('response', function(res) {
-            var contentDisp = res.headers['content-disposition'];
+		let filename;
+        let r = request(match[0]).on('response', function (res) {
+            let contentDisp = res.headers['content-disposition'];
             if (contentDisp && /^attachment/i.test(contentDisp)) {
                 filename = contentDisp.toLowerCase()
                     .split('filename=')[1]
@@ -81,7 +68,6 @@ function initListeners(username) {
                                 console.error(e);
                             }
                         });
-                        return;
                     });
                 })
                 .on('error', (e) => {
@@ -97,7 +83,6 @@ function initListeners(username) {
                             console.error(err);
                         }
                     });
-                    return;
                 })
                 .run();
 		});
@@ -105,7 +90,7 @@ function initListeners(username) {
 
 	// The real meat of the bot
 	telegram.on('document', (msg) => {
-		if (msg.document.mime_type == 'video/webm') {
+		if (msg.document.mime_type === 'video/webm') {
 			// Check the file size
 			if (msg.document.file_size > process.env.MAXSIZEBYTES) {
 				console.log(process.env.MAXSIZEBYTES)
@@ -132,7 +117,6 @@ function initListeners(username) {
 									console.error(e);
 								}
 							});
-							return;
 						});
 					})
 					.on('error', (e) => {
@@ -148,12 +132,10 @@ function initListeners(username) {
 								console.error(err);
 							}
 						});
-						return;
 					})
 					.run();
 			})
 		}
-		return;
 	});
 }
 
@@ -162,10 +144,35 @@ process.env.MAXSIZEBYTES = parseInt(process.env.MAXSIZEBYTES);
 if (!fs.existsSync('./tmp/')) {
 	fs.mkdirSync('./tmp/');
 }
-var telegram = new TelegramBot(process.env.TELEGRAMKEY, {
-	polling: true
-}); // Polling so we don't have to deal with NAT
+let telegram = null;
+
+// Are we on Heroku?
+if (process.env.PORT && !isNaN(process.env.PORT)) {
+	if (process.env.APPURL) {
+		telegram = new TelegramBot(process.env.TELEGRAMKEY, {
+			webHook: {
+				port: process.env.PORT
+			}
+        });
+		telegram.setWebHook(`${process.env.APPURL}/bot${process.env.TELEGRAMKEY}`);
+	} else {
+        const http = require('http');
+        const server = http.createServer((req, res) => {
+            res.end('Alive!')
+        });
+        server.listen(parseInt(process.env.PORT), (e) => {
+            if (e) {
+                return console.error(e)
+            }
+        });
+    }
+} else {
+    telegram = new TelegramBot(process.env.TELEGRAMKEY, {
+        polling: true
+    }); // Polling so we don't have to deal with NAT
+}
+
 telegram.getMe().then(function(me) {
-	console.log('[Telegram] Telegram connection established. Logged in as:', me.username);
-	initListeners(me.username);
+    console.log('[Telegram] Telegram connection established. Logged in as:', me.username);
+    initListeners(me.username);
 });
