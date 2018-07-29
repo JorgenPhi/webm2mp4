@@ -3,7 +3,7 @@
   "description": "A telegram bot that converts WebM files to MP4.",
   "repository": "https://github.com/JorgenPhi/webm2mp4",
   "keywords": ["node", "ffmpeg", "webm", "mp4", "telegram"],
-  "buildpacks": [{"url": "https://github.com/chrisfelix82/heruku-buildpack-ffmpeg-nodejs"}],
+  "buildpacks": [{"url": "https://github.com/Litterfeldt/heroku-buildpack-ffmpeg-x264-fdk_aac"}, {"url": "heroku/nodejs"}],
   "env": {
     "TELEGRAMKEY": {
       "description": "The API key for your bot given to you from @BotFather."
