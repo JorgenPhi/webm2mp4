@@ -18,7 +18,8 @@ function processVideo(filename, msg) {
     ffmpeg(`./tmp/${filename}`)
         .output(`./tmp/${filename}.mp4`)
         .videoCodec('libx264')
-        .outputOption('-crf 20')
+        .outputOption('-crf 25')
+        .outputOption('-preset slow')
         .outputOptions('-strict', '-2') // Needed since axc is "experimental"
         .on('end', () => {
             let videoStat = fs.statSync(`./tmp/${filename}.mp4`);
@@ -47,7 +48,7 @@ function processVideo(filename, msg) {
             });
         })
         .on('progress', function(progress) {
-            telegram.sendMessage(msg.chat.id, 'Processing: ' + progress.percent + '% done', {disable_notification: true}).then((result) => {
+            telegram.sendMessage(msg.chat.id, filename + ' Processing: ' + progress.percent + '% done', {disable_notification: true}).then((result) => {
                 setTimeout(function () {
                     telegram.deleteMessage(msg.chat.id, result.message_id);
                 }, 500);
