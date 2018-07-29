@@ -10,16 +10,18 @@ const ffmpeg = require('fluent-ffmpeg');
 
 // Check if we have a valid API key
 if (!process.env.TELEGRAMKEY) {
-	console.error('Telegram API key was not, MaxSize was not set, or .env file is missing');
+	console.error('Telegram API key was not or .env file is missing');
 	process.exit(1);
 }
 
 function processVideo(filename, msg) {
     ffmpeg(`./tmp/${filename}`)
         .output(`./tmp/${filename}.mp4`)
-        .outputOptions('-strict -2') // Needed since axc is "experimental"
+        .videoCodec('libx264')
+        .outputOption('-crf 20')
+        .outputOptions('-strict', '-2') // Needed since axc is "experimental"
         .on('end', () => {
-            var videoStat = fs.statSync(`./tmp/${filename}.mp4`);
+            let videoStat = fs.statSync(`./tmp/${filename}.mp4`);
             let fileSizeInBytes = videoStat.size;
             let fileSizeInMegabytes = fileSizeInBytes / 1000000.0;
             if (fileSizeInMegabytes >= 10) {
@@ -78,16 +80,17 @@ function initListeners(username) {
 
 	// These commands are required to have responses by the Telegram API 
 	telegram.onText(new RegExp('/start(?:@' + username + ')?$', 'i'), function(msg, match) {
-		console.log('[webm2mp4] New private chat started with', msg.from);
+		console.log('[webm2mp4] New private chat started with', msg.from.username);
 		telegram.sendMessage(msg.chat.id, 'Hello! Upload an WebM for me to convert it to a MP4.');
 	});
 
 	telegram.onText(new RegExp('/help(?:@' + username + ')?$', 'i'), function(msg, match) {
-		console.log('[webm2mp4] Help command used by', msg.from);
+		console.log('[webm2mp4] Help command used by', msg.from.username);
 		telegram.sendMessage(msg.chat.id, 'Hello! Upload an WebM for me to convert it to a MP4. I can also be added to group chats to automatically convert WebMs.');
 	});
 
 	telegram.onText(/^(http|https).*/, function (msg, match) {
+        console.log(`[webm2mp4] ${msg.from.username} : ${match[0]}`);
 		let filename;
 		let status;
         let r = request(match[0]);
@@ -129,6 +132,8 @@ function initListeners(username) {
 
 	// The real meat of the bot
 	telegram.on('document', (msg) => {
+        console.log(`[webm2mp4] ${msg.from.username} : docuemnt ${msg.document.file_id}`);
+
 		if (msg.document.mime_type === 'video/webm') {
 			// Download it
 
@@ -174,7 +179,8 @@ if (process.env.PORT && !isNaN(process.env.PORT)) {
     }
 } else {
     telegram = new TelegramBot(process.env.TELEGRAMKEY, {
-        polling: true
+        polling: true,
+        request: {family: 6}
     }); // Polling so we don't have to deal with NAT
 }
 
