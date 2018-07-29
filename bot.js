@@ -27,14 +27,19 @@ function processVideo(filename, msg) {
             let fileSizeInMegabytes = fileSizeInBytes / 1000000.0;
             if (fileSizeInMegabytes >= 10) {
                 console.log('[webm2mp4] File', filename, 'converted - Generating thumbnail...');
-                telegram.sendMessage(msg.chat.id, `Generating thumbnail for: ${filename}...`);
+                telegram.sendMessage(msg.chat.id, `Generating thumbnail for: ${filename}...`).then((result) => {
+                    setTimeout(function () {
+                        telegram.deleteMessage(msg.chat.id, result.message_id);
+                    }, 500);
+                });
+
                 ffmpeg(`./tmp/${filename}.mp4`).screenshots({
                     timestamps: ['50%'],
                     filename: filename + '.png',
                     folder: './tmp/'
                 }).on('end', function () {
                     console.log('[webm2mp4] File', filename, 'finished - Uploading...');
-                    telegram.sendPhoto(msg.chat.id, `./tmp/${filename}.png`).then(function (fileResult) {
+                    telegram.sendPhoto(msg.chat.id, `./tmp/${filename}.png`).then(function () {
                         fs.unlink('./tmp/' + filename + '.png', () => {});
                     });
                 });
