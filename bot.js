@@ -40,11 +40,11 @@ function processVideo(filename, msg) {
                 });
             } else {
                 console.log('[webm2mp4] File', filename, 'finished - Uploading...');
-                fs.unlink('./tmp/' + filename, () => {});
             }
 
             telegram.sendVideo(msg.chat.id, './tmp/' + filename + '.mp4').then(function() {
                 fs.unlink('./tmp/' + filename + '.mp4', () => {});
+                fs.unlink('./tmp/' + filename, () => {});
             });
         })
         .on('progress', function(progress) {
