@@ -19,7 +19,9 @@ function processVideo(filename, msg) {
         .output(`./tmp/${filename}.mp4`)
         .videoCodec('libx264')
         .outputOption('-crf 25')
-        .outputOption('-preset slow')
+        .outputOption('-profile:v high')
+        .outputOption('-level 4.2')
+        .outputOption('-preset veryslow')
         .outputOptions('-strict', '-2') // Needed since axc is "experimental"
         .on('end', () => {
             let videoStat = fs.statSync(`./tmp/${filename}.mp4`);
