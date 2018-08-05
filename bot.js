@@ -13,7 +13,7 @@ if (!process.env.TELEGRAMKEY) {
 	console.error('Telegram API key was not or .env file is missing');
 	process.exit(1);
 }
-
+// The real meat of the bot
 function processVideo(filename, msg) {
     ffmpeg(`./tmp/${filename}`)
         .output(`./tmp/${filename}.mp4`)
@@ -138,7 +138,6 @@ function initListeners(username) {
 		})
 	});
 
-	// The real meat of the bot
 	telegram.on('document', (msg) => {
         console.log(`[webm2mp4] ${msg.from.username} : docuemnt ${msg.document.file_id}`);
 
@@ -157,6 +156,21 @@ function initListeners(username) {
 			}).catch((e) => telegram.sendMessage(msg.chat.id, `Failed to download video. Reason: ${e}`));
 		}
 	});
+
+    telegram.on('video', (msg) => {
+        console.log(`[webm2mp4] ${msg.from.username} : video ${msg.video.file_id}`);
+
+        telegram.sendMessage(msg.chat.id, `Started downloading`).then((result) => {
+            setTimeout(() => {
+                telegram.deleteMessage(msg.chat.id, result.message_id);
+            }, 5000);
+        });
+
+        telegram.downloadFile(msg.video.file_id, './tmp/').then(function(filename) {
+            filename = filename.split(path.sep)[1];
+            processVideo(filename,msg);
+        }).catch((e) => telegram.sendMessage(msg.chat.id, `Failed to download video. Reason: ${e}`));
+    })
 }
 
 // Init
