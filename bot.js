@@ -15,6 +15,8 @@ if (!process.env.TELEGRAMKEY) {
 }
 // The real meat of the bot
 function processVideo(filename, msg) {
+    let notification = false;
+
     ffmpeg(`./tmp/${filename}`)
         .output(`./tmp/${filename}.mp4`)
         .videoCodec('libx264')
@@ -55,11 +57,17 @@ function processVideo(filename, msg) {
             });
         })
         .on('progress', function(progress) {
-            telegram.sendMessage(msg.chat.id, filename + ' Processing: ' + progress.percent + '% done', {disable_notification: true}).then((result) => {
-                setTimeout(function () {
-                    telegram.deleteMessage(msg.chat.id, result.message_id);
-                }, 500);
-            });
+            let msglog = filename + ' Processing: ' + progress.percent + '% done';
+
+            console.log(msglog);
+            if (!notification && progress.percent >= 50) {
+                notification = true;
+                telegram.sendMessage(msg.chat.id, msglog, {disable_notification: true}).then((result) => {
+                    setTimeout(function () {
+                        telegram.deleteMessage(msg.chat.id, result.message_id);
+                    }, 500);
+                });
+            }
         })
         .on('error', (e) => {
             console.error(e);
