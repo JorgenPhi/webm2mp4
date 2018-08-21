@@ -62,12 +62,13 @@ function processVideo(filename, msg) {
         .on('progress', function(progress) {
             let msglog = filename + ' Processing: ' + progress.percent + '% done';
 
-            console.log(msglog);
+
             if (!editorMsg) {
                 return;
             }
 
-            if (Math.floor(Date.now() / 1000) - notification <= 5) {
+            if (Math.floor(Date.now() / 1000) - notification >= 10) {
+                console.log(msglog);
                 telegram.editMessageText(msglog, {chat_id: msg.chat.id, message_id: editorMsg});
                 notification = Math.floor(Date.now() / 1000);
             }
