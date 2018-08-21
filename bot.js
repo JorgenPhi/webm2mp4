@@ -16,6 +16,11 @@ if (!process.env.TELEGRAMKEY) {
 // The real meat of the bot
 function processVideo(filename, msg) {
     let notification = false;
+    let editorMsg = null;
+
+    telegram.sendMessage(msg.chat.id, `Starting converting ${filename}`).then((result) => {
+        editorMsg = result.message_id;
+    });
 
     ffmpeg(`./tmp/${filename}`)
         .output(`./tmp/${filename}.mp4`)
@@ -26,16 +31,14 @@ function processVideo(filename, msg) {
         .outputOption('-preset veryslow')
         .outputOptions('-strict', '-2') // Needed since axc is "experimental"
         .on('end', () => {
+            telegram.deleteMessage(msg.chat.id, editorMsg);
+
             let videoStat = fs.statSync(`./tmp/${filename}.mp4`);
             let fileSizeInBytes = videoStat.size;
             let fileSizeInMegabytes = fileSizeInBytes / 1000000.0;
             if (fileSizeInMegabytes >= 10) {
                 console.log('[webm2mp4] File', filename, 'converted - Generating thumbnail...');
-                telegram.sendMessage(msg.chat.id, `Generating thumbnail for: ${filename}...`).then((result) => {
-                    setTimeout(function () {
-                        telegram.deleteMessage(msg.chat.id, result.message_id);
-                    }, 500);
-                });
+                telegram.sendMessage(msg.chat.id, `Generating thumbnail for: ${filename}...`);
 
                 ffmpeg(`./tmp/${filename}.mp4`).screenshots({
                     timestamps: ['50%'],
@@ -60,13 +63,13 @@ function processVideo(filename, msg) {
             let msglog = filename + ' Processing: ' + progress.percent + '% done';
 
             console.log(msglog);
-            if (!notification && progress.percent >= 50) {
-                notification = true;
-                telegram.sendMessage(msg.chat.id, msglog, {disable_notification: true}).then((result) => {
-                    setTimeout(function () {
-                        telegram.deleteMessage(msg.chat.id, result.message_id);
-                    }, 500);
-                });
+            if (!editorMsg) {
+                return;
+            }
+
+            if (Math.floor(Date.now() / 1000) - notification <= 5) {
+                telegram.editMessageText(msglog, {chat_id: msg.chat.id, message_id: editorMsg});
+                notification = Math.floor(Date.now() / 1000);
             }
         })
         .on('error', (e) => {
