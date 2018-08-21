@@ -28,7 +28,7 @@ function processVideo(filename, msg) {
         .outputOption('-crf 25')
         .outputOption('-profile:v high')
         .outputOption('-level 4.2')
-        .outputOption('-preset veryslow')
+        .outputOption('-preset medium')
         .outputOptions('-strict', '-2') // Needed since axc is "experimental"
         .on('end', () => {
             telegram.deleteMessage(msg.chat.id, editorMsg);
