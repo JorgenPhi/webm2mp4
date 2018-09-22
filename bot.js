@@ -12,7 +12,7 @@ const i18n = new TelegrafI18n({
 const bot = new Composer()
 bot.use(i18n)
 
-bot.start(({ reply, i18n, message }) => reply(i18n.t('common.start')))
+bot.start(({ reply, i18n }) => reply(i18n.t('common.start')))
 
 bot.url(async (ctx) => {
     const urls = ctx.message.entities
