@@ -9,23 +9,12 @@ const i18n = new TelegrafI18n({
   directory: path.resolve(__dirname, 'locales')
 })
 
-function getLocale (lang_code) {
-  if (lang_code.includes('ru')) {
-    return 'ru'
-  }
-  return 'en'
-}
-
 const bot = new Composer()
 bot.use(i18n)
 
-bot.start(({ reply, i18n, message }) => {
-  i18n.locale(getLocale(message.from.language_code))
-  reply(i18n.t('common.start'))
-})
+bot.start(({ reply, i18n, message }) => reply(i18n.t('common.start')))
 
 bot.url(async (ctx) => {
-    ctx.i18n.locale(getLocale(ctx.message.from.language_code))
     const urls = ctx.message.entities
       .filter(({ type }) => type === 'url')
       .map(({ offset, length }) => ctx.message.text.substring(offset, offset + length))
@@ -66,7 +55,6 @@ bot.url(async (ctx) => {
   }
 )
 bot.on('document', async (ctx) => {
-    ctx.i18n.locale(getLocale(ctx.message.from.language_code))
     if (!(ctx.message.document.mime_type && (ctx.message.document.mime_type === 'video/webm' ||
       ctx.message.document.mime_type === 'application/octet-stream'))) {
       ctx.reply(ctx.i18n.t('download_document.error.not_a_video'), {
