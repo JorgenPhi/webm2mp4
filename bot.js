@@ -1,223 +1,105 @@
-'use strict';
-require('dotenv').config();
-const path = require('path');
-const url = require('url');
-const request = require('request');
-const TelegramBot = require('node-telegram-bot-api');
-const prettysize = require('prettysize');
-const fs = require('fs');
-const ffmpeg = require('fluent-ffmpeg');
+const path = require('path')
+const { Composer } = require('micro-bot')
+const TelegrafI18n = require('telegraf-i18n')
+const { downloadFile, NotAVideoError, FetchError } = require('./utils/download-file')
+const { convertFile } = require('./ffmpeg/ffmpeg-converter')
 
-// Check if we have a valid API key
-if (!process.env.TELEGRAMKEY) {
-	console.error('Telegram API key was not or .env file is missing');
-	process.exit(1);
+const i18n = new TelegrafI18n({
+  defaultLanguage: 'en',
+  directory: path.resolve(__dirname, 'locales')
+})
+
+function getLocale (lang_code) {
+  if (lang_code.includes('ru')) {
+    return 'ru'
+  }
+  return 'en'
 }
-// The real meat of the bot
-function processVideo(filename, msg) {
-    let notification = false;
-    let editorMsg = null;
 
-    telegram.sendMessage(msg.chat.id, `Starting converting ${filename}`).then((result) => {
-        editorMsg = result.message_id;
-    });
+const bot = new Composer()
+bot.use(i18n)
 
-    ffmpeg(`./tmp/${filename}`)
-        .output(`./tmp/${filename}.mp4`)
-        .videoCodec('libx264')
-        .outputOption('-crf 25')
-        .outputOption('-profile:v high')
-        .outputOption('-level 4.2')
-        .outputOption('-preset medium')
-        .outputOptions('-strict', '-2') // Needed since axc is "experimental"
-        .on('end', () => {
-            telegram.deleteMessage(msg.chat.id, editorMsg);
+bot.start(({ reply, i18n, message }) => {
+  i18n.locale(getLocale(message.from.language_code))
+  reply(i18n.t('common.start'))
+})
 
-            let videoStat = fs.statSync(`./tmp/${filename}.mp4`);
-            let fileSizeInBytes = videoStat.size;
-            let fileSizeInMegabytes = fileSizeInBytes / 1000000.0;
-            if (fileSizeInMegabytes >= 10) {
-                console.log('[webm2mp4] File', filename, 'converted - Generating thumbnail...');
-                telegram.sendMessage(msg.chat.id, `Generating thumbnail for: ${filename}...`);
-
-                ffmpeg(`./tmp/${filename}.mp4`).screenshots({
-                    timestamps: ['50%'],
-                    filename: filename + '.png',
-                    folder: './tmp/'
-                }).on('end', function () {
-                    console.log('[webm2mp4] File', filename, 'finished - Uploading...');
-                    telegram.sendPhoto(msg.chat.id, `./tmp/${filename}.png`).then(function () {
-                        fs.unlink('./tmp/' + filename + '.png', () => {});
-                    });
-                });
-            } else {
-                console.log('[webm2mp4] File', filename, 'finished - Uploading...');
-            }
-
-            telegram.sendVideo(msg.chat.id, './tmp/' + filename + '.mp4').then(function() {
-                fs.unlink('./tmp/' + filename + '.mp4', () => {});
-                fs.unlink('./tmp/' + filename, () => {});
-            });
+bot.url(async (ctx) => {
+    ctx.i18n.locale(getLocale(ctx.message.from.language_code))
+    const urls = ctx.message.entities
+      .filter(({ type }) => type === 'url')
+      .map(({ offset, length }) => ctx.message.text.substring(offset, offset + length))
+    urls.forEach(async function (url) {
+        const msg = await ctx.reply(ctx.i18n.t('download_url.start', { url: url }), {
+          parse_mode: 'HTML',
+          disable_web_page_preview: true
         })
-        .on('progress', function(progress) {
-            let msglog = filename + ' Processing: ' + progress.percent + '% done';
-
-
-            if (!editorMsg) {
-                return;
-            }
-
-            if (Math.floor(Date.now() / 1000) - notification >= 10) {
-                console.log(msglog);
-                telegram.editMessageText(msglog, {chat_id: msg.chat.id, message_id: editorMsg});
-                notification = Math.floor(Date.now() / 1000);
-            }
-        })
-        .on('error', (e) => {
-            console.error(e);
-            // Cleanup
-            fs.unlink('./tmp/' + filename, (err) => {
-                if (err) {
-                    console.error(err);
-                }
-            });
-            fs.unlink('./tmp/' + filename + '.mp4', (err) => {
-                if (err) {
-                    console.error(err);
-                }
-            });
-        })
-        .run();
-}
-
-function initListeners(username) {
-	// Telegram Required Commands
-
-	// We need to escape our username for regex use
-	// Credit bobince & nhahtdh of stackoverflow
-	// https://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript
-	username = username.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-
-	// These commands are required to have responses by the Telegram API 
-	telegram.onText(new RegExp('/start(?:@' + username + ')?$', 'i'), function(msg, match) {
-		console.log('[webm2mp4] New private chat started with', msg.from.username);
-		telegram.sendMessage(msg.chat.id, 'Hello! Upload an WebM for me to convert it to a MP4.');
-	});
-
-	telegram.onText(new RegExp('/help(?:@' + username + ')?$', 'i'), function(msg, match) {
-		console.log('[webm2mp4] Help command used by', msg.from.username);
-		telegram.sendMessage(msg.chat.id, 'Hello! Upload an WebM for me to convert it to a MP4. I can also be added to group chats to automatically convert WebMs.');
-	});
-
-	telegram.onText(/^(http|https).*/, function (msg, match) {
-        console.log(`[webm2mp4] ${msg.from.username} : ${match[0]}`);
-		let filename;
-		let status;
-        let r = request(match[0]);
-        telegram.sendMessage(msg.chat.id, `Started downloading`).then((result) => {
-            setTimeout(() => {
-                telegram.deleteMessage(msg.chat.id, result.message_id);
-            }, 5000);
-        });
-
-        r.on('response', function (res) {
-        	if (res.statusCode !== 200) {
-        		status = false;
-                telegram.sendMessage(msg.chat.id, `Failed to download. Code: ${res.statusCode}`);
-                return;
-			}
-			if (res.headers['content-type'].indexOf('video') === -1) {
-        	    status = false;
-                telegram.sendMessage(msg.chat.id, `Doesn't look like a video`);
-                return;
-            }
-
-            filename = path.basename(url.parse(match[0]).path);
-            console.log(filename);
-            status = true;
-            r.pipe(fs.createWriteStream(path.join(__dirname, '/tmp/', filename)));
-        });
-
-        r.on('end', function () {
-        	if (!status) {return;}
-			processVideo(filename, msg)
-		});
-
-        r.on('error', function (err) {
-        	status = false;
-        	telegram.sendMessage(msg.chat.id, `Failed to download video. Reason: ${err}`);
-            telegram.sendMessage(msg.chat.id, `Debug info: link: ${match[0]}\nfilename: ${filename}`);
-		})
-	});
-
-	telegram.on('document', (msg) => {
-        console.log(`[webm2mp4] ${msg.from.username} : docuemnt ${msg.document.file_id}`);
-
-		if (msg.document.mime_type === 'video/webm') {
-			// Download it
-
-            telegram.sendMessage(msg.chat.id, `Started downloading`).then((result) => {
-                setTimeout(() => {
-                    telegram.deleteMessage(msg.chat.id, result.message_id);
-                }, 5000);
-            });
-
-            telegram.downloadFile(msg.document.file_id, './tmp/').then(function(filename) {
-			    filename = filename.split(path.sep)[1];
-				processVideo(filename,msg);
-			}).catch((e) => telegram.sendMessage(msg.chat.id, `Failed to download video. Reason: ${e}`));
-		}
-	});
-
-    telegram.on('video', (msg) => {
-        console.log(`[webm2mp4] ${msg.from.username} : video ${msg.video.file_id}`);
-
-        telegram.sendMessage(msg.chat.id, `Started downloading`).then((result) => {
-            setTimeout(() => {
-                telegram.deleteMessage(msg.chat.id, result.message_id);
-            }, 5000);
-        });
-
-        telegram.downloadFile(msg.video.file_id, './tmp/').then(function(filename) {
-            filename = filename.split(path.sep)[1];
-            processVideo(filename,msg);
-        }).catch((e) => telegram.sendMessage(msg.chat.id, `Failed to download video. Reason: ${e}`));
-    })
-}
-
-// Init
-if (!fs.existsSync('./tmp/')) {
-	fs.mkdirSync('./tmp/');
-}
-let telegram = null;
-
-// Are we on Heroku?
-if (process.env.PORT && !isNaN(process.env.PORT)) {
-	if (process.env.APPURL) {
-		telegram = new TelegramBot(process.env.TELEGRAMKEY, {
-			webHook: {
-				port: process.env.PORT
-			}
-        });
-		telegram.setWebHook(`${process.env.APPURL}/bot${process.env.TELEGRAMKEY}`);
-	} else {
-        const http = require('http');
-        const server = http.createServer((req, res) => {
-            res.end('Alive!')
-        });
-        server.listen(parseInt(process.env.PORT), (e) => {
-            if (e) {
-                return console.error(e)
-            }
-        });
+        await ctx.telegram.sendChatAction(ctx.message.chat.id, 'record_video')
+        let downloadedFile
+        try {
+          downloadedFile = await downloadFile(url, msg)
+        } catch (err) {
+          console.log('Error ' + err)
+          let replyText = ctx.i18n.t('error')
+          switch (err.constructor) {
+            case TypeError:
+              replyText = ctx.i18n.t('download_url.error.filename', { url: url })
+              break
+            case FetchError:
+              replyText = ctx.i18n.t('download_url.error.fetch', { url: url })
+              break
+            case NotAVideoError:
+              replyText = ctx.i18n.t('download_url.error.not_a_video', { url: url })
+              break
+          }
+          await ctx.telegram.editMessageText(
+            msg.chat.id, msg.message_id, null,
+            replyText, { parse_mode: 'HTML', disable_web_page_preview: true }
+          )
+          return
+        }
+        if (downloadedFile) {
+          convertFile(downloadedFile, ctx, msg, url)
+        }
+      }
+    )
+  }
+)
+bot.on('document', async (ctx) => {
+    ctx.i18n.locale(getLocale(ctx.message.from.language_code))
+    if (!(ctx.message.document.mime_type && (ctx.message.document.mime_type === 'video/webm' ||
+      ctx.message.document.mime_type === 'application/octet-stream'))) {
+      ctx.reply(ctx.i18n.t('download_document.error.not_a_video'), {
+        reply_to_message_id: ctx.message.message_id,
+        parse_mode: 'HTML'
+      })
+      return
     }
-} else {
-    telegram = new TelegramBot(process.env.TELEGRAMKEY, {
-        polling: true
-    }); // Polling so we don't have to deal with NAT
-}
-
-telegram.getMe().then(function(me) {
-    console.log('[Telegram] Telegram connection established. Logged in as:', me.username);
-    initListeners(me.username);
-});
+    const msg = await ctx.reply(ctx.i18n.t('download_document.start'), {
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+      reply_to_message_id: ctx.message.message_id
+    })
+    let downloadedFile
+    try {
+      const fileLink = await ctx.telegram.getFileLink(ctx.message.document.file_id)
+      downloadedFile = await downloadFile(fileLink, msg)
+    } catch (err) {
+      console.log('Error ' + err)
+      let replyText = ctx.i18n.t('error')
+      switch (err.constructor) {
+        case NotAVideoError:
+          replyText = ctx.i18n.t('download_document.error.not_a_video')
+          break
+      }
+      await ctx.telegram.editMessageText(
+        msg.chat.id, msg.message_id, null,
+        replyText, { parse_mode: 'HTML' }
+      )
+    }
+    if (downloadedFile) {
+      convertFile(downloadedFile, ctx, msg, '')
+    }
+  }
+)
+module.exports = bot

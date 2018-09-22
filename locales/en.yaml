@@ -1,0 +1,44 @@
+common:
+  start: |
+    Hello, upload a WebM as file or send me a link
+
+error: |
+  ❌ <b>Unknown error!</b>
+
+download_document:
+  start: |
+    📥️ Downloading file
+
+  error:
+    not_a_video: |
+      ❌ <b>Error! It's not a video</b>
+
+download_url:
+  start: |
+    <a href="${url}">📥️</a> Downloading file
+
+  error:
+    fetch: |
+      <a href="${url}">❌</a> <b>Error! Can't download file</b>
+
+    filename: |
+      <a href="${url}">❌</a> <b>Error! Can't determine file type</b>
+
+    not_a_video: |
+      <a href="${url}">❌</a> <b>Error! No video</b>
+
+convert:
+  processing: |
+    <a href="${url}">⚙️</a> Converting\n${progressBar}
+
+  generating_thumbnail: |
+    <a href="${url}">🖼</a> Generating thumbnail
+
+  sending: |
+    <a href="${url}">📹</a> Sending <i>.mp4</i>
+
+  error: |
+    <a href="${url}">❌</a> <b>Error!</b>
+
+  big_output: |
+    <a href="${url}">❌</a> <b>Error! Output file is too big (>25 MiB)</b>
