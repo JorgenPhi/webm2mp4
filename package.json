@@ -1,26 +1,32 @@
 {
   "name": "webm2mp4",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": " Telegram bot that converts webm files to mp4 for users with Apple devices",
   "main": "bot.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JorgenPhi/webm2mp4.git"
+    "url": "git+https://github.com/vlakam/webm2mp4.git"
   },
   "scripts": {
-    "start": "node bot.js"
+    "start": "micro-bot -t ${BOT_TOKEN}"
   },
-  "author": "JorgenPhi",
+  "author": "vlakam",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/JorgenPhi/webm2mp4/issues"
+    "url": "https://github.com/vlakam/webm2mp4/issues"
   },
-  "homepage": "https://github.com/JorgenPhi/webm2mp4#readme",
+  "homepage": "https://github.com/vlakam/webm2mp4#readme",
   "dependencies": {
-    "dotenv": "^5.0.1",
+    "eslint": "^5.6.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-node": "^7.0.1",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0",
     "fluent-ffmpeg": "^2.1.2",
-    "node-telegram-bot-api": "^0.30.0",
-    "prettysize": "^1.1.0",
-    "request": "latest"
+    "micro-bot": "^2.3.0",
+    "node-fetch": "^2.1.2",
+    "telegraf": "^3.24.0",
+    "telegraf-i18n": "^6.3.0"
   }
 }

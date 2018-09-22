@@ -1,10 +1,10 @@
-[![dependencies Status](https://david-dm.org/JorgenPhi/webm2mp4/status.svg)](https://david-dm.org/JorgenPhi/webm2mp4)
-[![Greenkeeper badge](https://badges.greenkeeper.io/JorgenPhi/webm2mp4.svg)](https://greenkeeper.io/)
+[![dependencies Status](https://david-dm.org/vlakam/webm2mp4/status.svg)](https://david-dm.org/vlakam/webm2mp4)
+[![Greenkeeper badge](https://badges.greenkeeper.io/vlakam/webm2mp4.svg)](https://greenkeeper.io/)
 
 webm2mp4
 =====
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy?template=https://github.com/JorgenPhi/webm2mp4)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy?template=https://github.com/vlakam/webm2mp4)
 
 About
 -----
@@ -23,9 +23,7 @@ Install nodejs, npm, and ffmpeg to your system.
 
 Create a Telegram bot using their [official docs](https://core.telegram.org/bots/api).
 
-Copy .env.sample to .env and paste your API key there. You may also want to edit the default file size limit of 10MB.
-
-Run `node bot.js`.
+Run `micro-bot -t ${BOT_TOKEN}`.
 
 Usage
 ----------
