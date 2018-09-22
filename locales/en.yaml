@@ -12,6 +12,8 @@ download_document:
   error:
     not_a_video: |
       ❌ <b>Error! It's not a video</b>
+    big_file: |
+      ❌ <b>Error! Can't download files >20 MB</b>
 
 download_url:
   start: |
@@ -41,4 +43,4 @@ convert:
     <a href="${url}">❌</a> <b>Error!</b>
 
   big_output: |
-    <a href="${url}">❌</a> <b>Error! Output file is too big (>25 MiB)</b>
+    <a href="${url}">❌</a> <b>Error! Output file is too big (>50 MB)</b>

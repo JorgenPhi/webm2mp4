@@ -74,7 +74,7 @@ bot.on('document', async (ctx) => {
       downloadedFile = await downloadFile(fileLink, msg)
     } catch (err) {
       console.log('Error ' + err)
-      let replyText = ctx.i18n.t('error')
+      let replyText = ctx.i18n.t('download_document.error.big_file')
       switch (err.constructor) {
         case NotAVideoError:
           replyText = ctx.i18n.t('download_document.error.not_a_video')

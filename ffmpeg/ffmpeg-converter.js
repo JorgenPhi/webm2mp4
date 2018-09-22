@@ -57,9 +57,9 @@ module.exports = {
 
       let videoStat = fs.statSync(`./tmp/${File}.mp4`)
       let fileSizeInBytes = videoStat.size
-      let fileSizeInMebibytes = fileSizeInBytes / 1048576.0
+      let fileSizeInMegabytes = fileSizeInBytes / 1000000.0
       let extraVideo
-      if (fileSizeInMebibytes > 25) {
+      if (fileSizeInMegabytes > 50) {
         ctx.telegram.editMessageText(msg.chat.id, msg.message_id, null, ctx.i18n.t('convert.big_output', { url: url }), {
           parse_mode: 'HTML',
           disable_web_page_preview: true
@@ -67,7 +67,7 @@ module.exports = {
         cleanup(File, extraVideo)
         return
       }
-      if (fileSizeInMebibytes > 10) {
+      if (fileSizeInMegabytes >= 10) {
         ctx.telegram.editMessageText(msg.chat.id, msg.message_id, null, ctx.i18n.t('convert.generating_thumbnail', { url: url }), {
           parse_mode: 'HTML',
           disable_web_page_preview: true
