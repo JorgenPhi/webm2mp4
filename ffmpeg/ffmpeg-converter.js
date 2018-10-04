@@ -53,7 +53,8 @@ module.exports = {
       .outputOption('-profile:v high')
       .outputOption('-level 4.2')
       .outputOption('-preset medium')
-      .outputOptions('-strict', '-2').on('end', async () => {
+      .outputOptions('-strict', '-2')
+      .outputOption('-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2').on('end', async () => {
 
       let videoStat = fs.statSync(`./tmp/${File}.mp4`)
       let fileSizeInBytes = videoStat.size
