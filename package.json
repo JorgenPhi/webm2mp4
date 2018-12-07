@@ -20,7 +20,7 @@
     "dotenv": "^5.0.1",
     "fluent-ffmpeg": "^2.1.2",
     "node-telegram-bot-api": "^0.30.0",
-    "prettysize": "^1.1.0",
+    "prettysize": "^2.0.0",
     "request": "latest"
   }
 }
