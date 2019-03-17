@@ -6,3 +6,7 @@ services:
     env_file:
       .env
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
