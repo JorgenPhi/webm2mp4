@@ -52,6 +52,11 @@ module.exports = {
       .outputOption('-profile:v high')
       .outputOption('-level 4.2')
       .outputOption('-preset medium')
+      .outputOption(`-threads ${process.env.THREADS || 2}`)
+      .outputOption(`-map V:0?`)
+      .outputOption(`-map 0:a?`)
+      .outputOption(`-timelimit 900`)
+      .outputOption('-movflags +faststart')
       .outputOptions('-strict', '-2')
       .outputOption('-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2').on('end', async () => {
 

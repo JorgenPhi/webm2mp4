@@ -1,8 +1,9 @@
-const path = require('path')
-const { Composer } = require('micro-bot')
-const TelegrafI18n = require('telegraf-i18n')
-const { downloadFile, NotAVideoError, FetchError } = require('./utils/download-file')
-const { convertFile } = require('./ffmpeg/ffmpeg-converter')
+const path = require('path');
+const { Composer } = require('micro-bot');
+const TelegrafI18n = require('telegraf-i18n');
+const { NotAVideoError, FetchError } = require('./utils/download-file');
+const SocksAgent = require('socks5-https-client/lib/Agent');
+const { convertFile } = require('./ffmpeg/ffmpeg-converter');
 
 const i18n = new TelegrafI18n({
   defaultLanguage: 'en',
@@ -92,5 +93,39 @@ bot.on('document', async (ctx) => {
       convertFile(File, ctx, msg, url)
     }
   }
-)
-module.exports = bot
+);
+
+const proxyOptions = (() => {
+  if (!process.env.PROXY) {
+    return null;
+  }
+
+  let [ credentials, server ] = process.env.PROXY.split('@');
+  if (!server) {
+    server = credentials;
+    credentials = null;
+  }
+
+  let [ host,port ] = server.split(':');
+  let result = {
+    socksHost: host,
+    socksPort: port
+  }
+
+  if (credentials) {
+    let [ user, pass ] = credentials.split(':');
+    result.socksUsername = user;
+    result.socksPassword = pass;
+  }
+
+  return new SocksAgent(result);
+})();
+
+module.exports = {
+  bot: bot,
+  options: {
+    telegram: {
+      agent: proxyOptions
+    }
+  }
+}

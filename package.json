@@ -24,8 +24,9 @@
     "eslint-plugin-promise": "^4.0.1",
     "eslint-plugin-standard": "^4.0.0",
     "fluent-ffmpeg": "^2.1.2",
-    "micro-bot": "^2.3.0",
+    "micro-bot": "^2.5.3",
     "node-fetch": "^2.1.2",
+    "socks5-https-client": "^1.2.1",
     "telegraf": "^3.24.0",
     "telegraf-i18n": "^6.3.0"
   }
