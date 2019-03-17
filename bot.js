@@ -24,9 +24,10 @@ bot.url(async (ctx) => {
           disable_web_page_preview: true
         })
         await ctx.telegram.sendChatAction(ctx.message.chat.id, 'record_video')
-        let downloadedFile
+        let File
         try {
-          downloadedFile = await downloadFile(url, msg)
+          const ext = path.extname(url)
+          File = `${ctx.message.chat.id}_${ctx.message.message_id}` + ext
         } catch (err) {
           console.log('Error ' + err)
           let replyText = ctx.i18n.t('error')
@@ -47,8 +48,8 @@ bot.url(async (ctx) => {
           )
           return
         }
-        if (downloadedFile) {
-          convertFile(downloadedFile, ctx, msg, url)
+        if (File) {
+          convertFile(File, ctx, msg, url)
         }
       }
     )
@@ -68,10 +69,12 @@ bot.on('document', async (ctx) => {
       disable_web_page_preview: true,
       reply_to_message_id: ctx.message.message_id
     })
-    let downloadedFile
+    let File
+    let url
     try {
-      const fileLink = await ctx.telegram.getFileLink(ctx.message.document.file_id)
-      downloadedFile = await downloadFile(fileLink, msg)
+      url = await ctx.telegram.getFileLink(ctx.message.document.file_id)
+      const ext = path.extname(url)
+      File = `${ctx.message.chat.id}_${ctx.message.message_id}` + ext
     } catch (err) {
       console.log('Error ' + err)
       let replyText = ctx.i18n.t('download_document.error.big_file')
@@ -85,8 +88,8 @@ bot.on('document', async (ctx) => {
         replyText, { parse_mode: 'HTML' }
       )
     }
-    if (downloadedFile) {
-      convertFile(downloadedFile, ctx, msg, '')
+    if (File) {
+      convertFile(File, ctx, msg, url)
     }
   }
 )

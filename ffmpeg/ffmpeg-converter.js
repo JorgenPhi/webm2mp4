@@ -7,7 +7,7 @@ function createThumb (File) {
       timestamps: ['50%'],
       filename: File + '.jpg',
       folder: './tmp/',
-      size: '90x90'
+      scale: 'if(gt(iw,ih),90,trunc(oh*a/2)*2):if(gt(iw,ih),trunc(ow/a/2)*2,90)'
     }).on('end', () => {
       resolve()
     })
@@ -16,8 +16,6 @@ function createThumb (File) {
 
 function cleanup (File, extraVideo) {
   fs.unlink(`./tmp/${File}.mp4`, () => {
-  })
-  fs.unlink(`./tmp/${File}`, () => {
   })
   if (extraVideo) {
     fs.unlink(`./tmp/${File}.jpg`, () => {
@@ -46,7 +44,8 @@ module.exports = {
   convertFile: async function (File, ctx, msg, url) {
     await ctx.telegram.sendChatAction(msg.chat.id, 'record_video')
     let notification = false
-    ffmpeg(`./tmp/${File}`)
+    let extraVideo = null
+    ffmpeg(url)
       .output(`./tmp/${File}.mp4`)
       .videoCodec('libx264')
       .outputOption('-crf 25')
@@ -59,7 +58,6 @@ module.exports = {
       let videoStat = fs.statSync(`./tmp/${File}.mp4`)
       let fileSizeInBytes = videoStat.size
       let fileSizeInMegabytes = fileSizeInBytes / 1000000.0
-      let extraVideo
       if (fileSizeInMegabytes > 50) {
         ctx.telegram.editMessageText(msg.chat.id, msg.message_id, null, ctx.i18n.t('convert.big_output', { url: url }), {
           parse_mode: 'HTML',
@@ -101,26 +99,22 @@ module.exports = {
         }
       })
       .on('error', (e) => {
-        ctx.telegram.editMessageText(msg.chat.id, msg.message_id, null, ctx.i18n.t('convert.error', {
-          url: url
-        }), { parse_mode: 'HTML', disable_web_page_preview: true })
+        let err_str = e.toString()
+        if (err_str.includes('Invalid data found when processing input')) {
+          ctx.telegram.editMessageText(msg.chat.id, msg.message_id, null,
+            ctx.i18n.t('download_document.error.not_a_video'), {
+              parse_mode: 'HTML',
+              disable_web_page_preview: true
+            })
+          return
+        } else {
+          ctx.telegram.editMessageText(msg.chat.id, msg.message_id, null, ctx.i18n.t('convert.error', {
+            url: url
+          }), { parse_mode: 'HTML', disable_web_page_preview: true })
+        }
         console.error(e)
         // Cleanup
-        fs.unlink(`./tmp/${File}`, (err) => {
-          if (err) {
-            console.error(err)
-          }
-        })
-        fs.unlink(`./tmp/${File}.mp4`, (err) => {
-          if (err) {
-            console.error(err)
-          }
-        })
-        fs.unlink(`./tmp/${File}.jpg`, (err) => {
-          if (err) {
-            console.error(err)
-          }
-        })
+        cleanup(File, extraVideo)
       })
       .run()
   }

@@ -3,6 +3,6 @@ services:
   node:
     build:
       context: .
-    environment: 
-     - BOT_TOKEN=527894695:AAHDdGHISQm46IVfYl4FqysOjTi-uvuA2RA
+    env_file:
+      .env
     restart: always
